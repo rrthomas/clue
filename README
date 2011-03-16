@@ -1,0 +1,73 @@
+                   Clue: minimal C-Lua integration
+                   -------------------------------
+
+                   by Reuben Thomas <rrt@sc3d.org>
+                  http://luaforge.net/projects/clue
+
+                              release 7
+
+
+clue is a minimal C-Lua integration framework, based around just three
+calls: CLUE_GET and CLUE_SET get and set Lua variables, and clue_do
+executes a string of Lua code.
+
+clue is copyright Reuben Thomas 2007-2011, and is released under the
+MIT license, like Lua (see http://www.lua.org/copyright.html; it's
+basically the same as the BSD license). There is no warranty.
+
+Please report bugs and make suggestions to the email address above.
+
+
+Usage
+-----
+
+In each file that uses a clue API, #include "clue.h". clue.c must be
+compiled as part of the program.
+
+
+clue_State *clue_init(void)
+
+creates a new clue state (including a Lua state with standard
+libraries opened), returning a pointer to the state, or NULL on error.
+
+
+void clue_close(clue_State *L)
+
+frees a clue state; you only need to call it if you care about freeing
+the memory used.
+
+
+void clue_do(clue_State *L, const char *code)
+
+runs some Lua code `code' in the given state. On error, a traceback is
+printed and SIGABRT is raised (but using raise, not abort, so you can
+catch it if you really want to).
+
+
+int clue_pdo(clue_State *L, const char *code)
+
+works like clue_do, but errors are caught and returned.
+
+
+To get and set Lua variables, two macros are used:
+
+
+CLUE_SET(L, lvar, lty, cval)
+
+sets a Lua variable `lvar' of type `lty' to C value `cval in state L.
+
+
+CLUE_GET(L, lvar, lty, cvar)
+
+reads a value of type `lty' from Lua global `lvar' into C variable
+`cvar' in state L. Strings should be copied if their value is required
+after further clue calls.
+
+
+Valid values for `lty' are: boolean, integer, number, string,
+cfunction, userdata (for CLUE_GET), and lightuserdata (for CLUE_SET).
+(Under the hood, these are the suffixes of the corresponding
+lua_push... and lua_to... functions.) These are symbols, not strings;
+for example:
+
+  CLUE_SET(L, x, string, "hello");

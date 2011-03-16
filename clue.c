@@ -1,26 +1,9 @@
-#include "clue.h"
+/* Clue: minimal C-Lua integration
 
-clue_State *clue_init (void)
-{
-  clue_State *L;
+   Runtime code
 
-  if ((L = luaL_newstate()))
-      luaL_openlibs(L);
-  return L;
-}
+   Copyright (c) 2007, 2009, 2010, 2011 Reuben Thomas.
 
-void clue_close(clue_State *L)
-{
-  lua_close(L);
-}
-
-void clue_do(clue_State *L, const char *code)
-{
-  assert (luaL_loadstring(L, code) == 0);
-  clue_docall(L, 0, 1);
-}
-
-/*
 ** Lua stand-alone interpreter adapted from lua.c in Lua distribution:
 ** $Id: lua.c,v 1.160.1.2 2007/12/28 15:32:23 roberto Exp $
 **
@@ -50,6 +33,9 @@ void clue_do(clue_State *L, const char *code)
 #include <assert.h>
 #include <signal.h>
 #include <stdio.h>
+#include <stdarg.h>
+
+#include "clue.h"
 
 #define lua_c
 
@@ -57,7 +43,28 @@ void clue_do(clue_State *L, const char *code)
 #include <lauxlib.h>
 #include <lualib.h>
 
-clue_State *L;
+clue_State *clue_init (void)
+{
+  clue_State *L;
+
+  if ((L = luaL_newstate()))
+      luaL_openlibs(L);
+  return L;
+}
+
+void clue_close(clue_State *L)
+{
+  lua_close(L);
+}
+
+void clue_do(clue_State *L, const char *code)
+{
+  assert (luaL_loadstring(L, code) == 0);
+  clue_docall(L, 0, 1);
+}
+
+
+static clue_State *globalL;
 
 
 static void lstop (lua_State *L, lua_Debug *ar) {
@@ -70,7 +77,7 @@ static void lstop (lua_State *L, lua_Debug *ar) {
 static void laction (int i) {
   signal(i, SIG_DFL); /* if another SIGINT happens before lstop,
                               terminate process (default action) */
-  lua_sethook(L, lstop, LUA_MASKCALL | LUA_MASKRET | LUA_MASKCOUNT, 1);
+  lua_sethook(globalL, lstop, LUA_MASKCALL | LUA_MASKRET | LUA_MASKCOUNT, 1);
 }
 
 
@@ -113,6 +120,7 @@ static int traceback (lua_State *L) {
 
 static int docall (lua_State *L, int narg, int clear) {
   int status;
+  globalL = L;
   int base = lua_gettop(L) - narg;  /* function index */
   lua_pushcfunction(L, traceback);  /* push traceback function */
   lua_insert(L, base);  /* put it under chunk and args */
@@ -132,4 +140,87 @@ void clue_docall (lua_State *L, int narg, int clear) {
     report(L, status);
     raise(SIGABRT);
   }
+}
+
+int clue_call_va (clue_State *L, const char *func, const char *sig, ...) {
+  va_list vl;
+  int status;
+  int narg, nres;   /* number of arguments and results */
+
+  va_start(vl, sig);
+  lua_getglobal(L, func);  /* get function */
+
+  /* push arguments */
+  narg = 0;
+  while (*sig) {    /* push arguments */
+    switch (*sig++) {
+     case 'd':  /* double argument */
+       lua_pushnumber(L, va_arg(vl, double));
+       break;
+     case 'i':  /* int argument */
+       lua_pushnumber(L, va_arg(vl, int));
+       break;
+     case 's':  /* string argument */
+       lua_pushstring(L, va_arg(vl, char *));
+       break;
+         case 'b':
+                 lua_pushboolean(L,va_arg(vl,int));
+                 break;
+         case 'p':
+                 lua_pushlightuserdata(L,va_arg(vl,void*));
+                 break;
+         case 'f':
+                 lua_pushcfunction(L, (lua_CFunction)va_arg(vl,void*));
+                 break;
+     case '>':
+       goto endwhile;
+     default:
+       luaL_error(L, "invalid option (%c)", *(sig - 1));
+    }
+    narg++;
+    luaL_checkstack(L, 1, "too many arguments");
+  } endwhile:
+
+  /* do the call */
+  nres = strlen(sig);  /* number of expected results */
+  status = lua_pcall(L, narg, nres, 0);
+  if (status != 0)  /* do the call */
+    luaL_error(L, "error running function `%s': %s",
+    func, lua_tostring(L, -1));
+  /* retrieve results */
+  nres = -nres;     /* stack index of first result */
+  while (*sig) {    /* get results */
+    switch (*sig++) {
+    case 'd':  /* double result */
+       if (!lua_isnumber(L, nres))
+         luaL_error(L, "wrong result type");
+       *va_arg(vl, double *) = lua_tonumber(L, nres);
+       break;
+     case 'i':  /* int result */
+       if (!lua_isnumber(L, nres))
+         luaL_error(L, "wrong result type");
+       *va_arg(vl, int *) = (int)lua_tonumber(L, nres);
+       break;
+         case 'b':  /* boolean result */
+           if (!lua_isboolean(L,nres))
+             luaL_error(L, "wrong result type");
+           *va_arg(vl, int *) = (int)lua_toboolean(L, nres);
+           break;
+         case 'p':
+           if (!lua_islightuserdata(L,nres))
+             luaL_error(L, "wrong result type");
+           *va_arg(vl, void **) = (void*)lua_topointer(L, nres);
+           break;
+     case 's':  /* string result */
+       if (!lua_isstring(L, nres))
+         luaL_error(L, "wrong result type");
+       *va_arg(vl, const char **) = lua_tostring(L, nres);
+       break;
+     default:
+       luaL_error(L, "invalid option (%c)", *(sig - 1));
+    }
+    nres++;
+  }
+  va_end(vl);
+  return status;
 }

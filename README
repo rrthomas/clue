@@ -41,7 +41,7 @@ void clue_do(clue_State *L, const char *code)
 
 runs some Lua code `code' in the given state. On error, a traceback is
 printed and SIGABRT is raised (but using raise, not abort, so you can
-catch it if you really want to).
+catch it if you really want to). The function is not re-entrant.
 
 
 int clue_pdo(clue_State *L, const char *code)

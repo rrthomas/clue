@@ -1,5 +1,7 @@
 /* Clue: minimal C-Lua integration
 
+   Header file
+
    Copyright (c) 2007, 2009, 2010, 2011 Reuben Thomas.
 
    Permission is hereby granted, free of charge, to any person
@@ -35,8 +37,8 @@ typedef lua_State clue_State;
 
 clue_State *clue_init (void);
 void clue_close (clue_State *L);
-/* FIXME: Redo call interface based on http://www.lua.org/pil/25.3.html */
 void clue_do (clue_State *L, const char *code);
+int clue_call_va (clue_State *L, const char *func, const char *sig, ...);
 
 #define clue_pdo(L, code)                       \
   (assert (luaL_loadstring(L, code) == 0), lua_pcall(L, 0, 0, 0))

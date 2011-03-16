@@ -11,4 +11,4 @@ check:
 	./clue_test
 
 dist:
-	cd .. && rm -f $(DISTFILE) && zip $(DISTFILE) -r $(PROJECT) -x "*.o" "*.zip" clue/clue_test "clue/odds/*" && mv $(DISTFILE) $(PROJECT) && cd $(PROJECT) && unzip $(DISTFILE) && mv $(PROJECT) $(PROJECT_VERSIONED) && rm -f $(DISTFILE) && zip $(DISTFILE) -r $(PROJECT_VERSIONED) && rm -rf $(PROJECT_VERSIONED)
+	cd .. && rm -f $(DISTFILE) && zip $(DISTFILE) -r $(PROJECT) -x "*.o" "*.zip" "clue/.git/*" clue/.gitignore clue/clue_test "clue/odds/*" && mv $(DISTFILE) $(PROJECT) && cd $(PROJECT) && unzip $(DISTFILE) && mv $(PROJECT) $(PROJECT_VERSIONED) && rm -f $(DISTFILE) && zip $(DISTFILE) -r $(PROJECT_VERSIONED) && rm -rf $(PROJECT_VERSIONED)

@@ -160,14 +160,14 @@ int clue_call_va (clue_State *L, const char *func, const char *sig, ...) {
     case 'i':  /* int argument */
       lua_pushnumber(L, va_arg(vl, int));
       break;
-    case 's':  /* string argument */
-      lua_pushstring(L, va_arg(vl, char *));
-      break;
     case 'b':
       lua_pushboolean(L,va_arg(vl,int));
       break;
     case 'p':
       lua_pushlightuserdata(L,va_arg(vl,void*));
+      break;
+    case 's':  /* string argument */
+      lua_pushstring(L, va_arg(vl, char *));
       break;
     case 'f':
       lua_pushcfunction(L, (lua_CFunction)va_arg(vl,void*));

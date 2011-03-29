@@ -143,7 +143,7 @@ void clue_docall (lua_State *L, int narg, int clear) {
   }
 }
 
-int clue_call_va (clue_State *L, const char *func, const char *sig, ...) {
+int clue_call (clue_State *L, const char *func, const char *sig, ...) {
   va_list vl;
   int status;
   int narg, nres;   /* number of arguments and results */

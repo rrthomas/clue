@@ -4,7 +4,7 @@
                    by Reuben Thomas <rrt@sc3d.org>
                   http://luaforge.net/projects/clue
 
-                              release 7
+                              release 8
 
 
 clue is a minimal C-Lua integration framework, based around just three
@@ -49,8 +49,24 @@ int clue_pdo(clue_State *L, const char *code)
 works like clue_do, but errors are caught and returned.
 
 
-To get and set Lua variables, two macros are used:
+int clue_call(clue_State *L, const char *func, const char *sig, ...)
 
+calls the given function with the given signature, which is of the
+form [abc][>xyz], where the "abc" are argument types and the "xyz" are
+result types. Valid types are:
+
+  n = lua_Number
+  i = lua_Integer
+  b = boolean (int)
+  s = const char *
+  u = lightuserdata (void *)
+  f = lua_CFunction (only argument, not return value)
+
+The variadic arguments are the argument values followed by pointers in
+which to store the results.
+
+
+To get and set Lua variables, two macros are used:
 
 CLUE_SET(L, lvar, lty, cval)
 

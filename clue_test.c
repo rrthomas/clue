@@ -14,7 +14,7 @@ int main(void)
   printf("%d\n", x);
   printf("clue_pdo result %d\n",clue_pdo(L,"fail()"));
   clue_do(L, "function hello(a,b) return 'Hello', a+b end");
-  clue_call_va(L, "hello", "ii>si", a, b, &hello, &c);
+  clue_call(L, "hello", "ii>si", a, b, &hello, &c);
   printf("%s\t%d\n", hello, c);
 
   return 0;

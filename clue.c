@@ -1,34 +1,34 @@
 /* Clue: minimal C-Lua integration
-
-   Runtime code
-
-   Copyright (c) 2007, 2009, 2010, 2011 Reuben Thomas.
-
-** Lua stand-alone interpreter adapted from lua.c in Lua distribution:
-** $Id: lua.c,v 1.160.1.2 2007/12/28 15:32:23 roberto Exp $
-**
-******************************************************************************
-* Copyright (C) 1994-2008 Lua.org, PUC-Rio.  All rights reserved.
-*
-* Permission is hereby granted, free of charge, to any person obtaining
-* a copy of this software and associated documentation files (the
-* "Software"), to deal in the Software without restriction, including
-* without limitation the rights to use, copy, modify, merge, publish,
-* distribute, sublicense, and/or sell copies of the Software, and to
-* permit persons to whom the Software is furnished to do so, subject to
-* the following conditions:
-*
-* The above copyright notice and this permission notice shall be
-* included in all copies or substantial portions of the Software.
-*
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-* EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-* MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-* IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-* CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-******************************************************************************/
+ *
+ * Runtime code
+ *
+ * Copyright (c) 2007, 2009, 2010, 2011 Reuben Thomas.
+ *
+ ** Lua stand-alone interpreter adapted from lua.c in Lua distribution:
+ ** $Id: lua.c,v 1.160.1.2 2007/12/28 15:32:23 roberto Exp $
+ **
+ ******************************************************************************
+ * Copyright (C) 1994-2008 Lua.org, PUC-Rio.  All rights reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ ******************************************************************************/
 
 #include <assert.h>
 #include <signal.h>
@@ -48,19 +48,19 @@ clue_State *clue_init (void)
   clue_State *L;
 
   if ((L = luaL_newstate()))
-      luaL_openlibs(L);
+    luaL_openlibs(L);
   return L;
 }
 
-void clue_close(clue_State *L)
+void clue_close (clue_State *L)
 {
-  lua_close(L);
+  lua_close (L);
 }
 
-void clue_do(clue_State *L, const char *code)
+void clue_do (clue_State *L, const char *code)
 {
   assert (luaL_loadstring(L, code) == 0);
-  clue_docall(L, 0, 1);
+  clue_docall (L, 0, 1);
 }
 
 
@@ -76,7 +76,7 @@ static void lstop (lua_State *L, lua_Debug *ar) {
 
 static void laction (int i) {
   signal(i, SIG_DFL); /* if another SIGINT happens before lstop,
-                              terminate process (default action) */
+                         terminate process (default action) */
   lua_sethook(globalL, lstop, LUA_MASKCALL | LUA_MASKRET | LUA_MASKCOUNT, 1);
 }
 
@@ -154,28 +154,28 @@ int clue_call_va (clue_State *L, const char *func, const char *sig, ...) {
   narg = 0;
   while (*sig) {    /* push arguments */
     switch (*sig++) {
-     case 'd':  /* double argument */
-       lua_pushnumber(L, va_arg(vl, double));
-       break;
-     case 'i':  /* int argument */
-       lua_pushnumber(L, va_arg(vl, int));
-       break;
-     case 's':  /* string argument */
-       lua_pushstring(L, va_arg(vl, char *));
-       break;
-         case 'b':
-                 lua_pushboolean(L,va_arg(vl,int));
-                 break;
-         case 'p':
-                 lua_pushlightuserdata(L,va_arg(vl,void*));
-                 break;
-         case 'f':
-                 lua_pushcfunction(L, (lua_CFunction)va_arg(vl,void*));
-                 break;
-     case '>':
-       goto endwhile;
-     default:
-       luaL_error(L, "invalid option (%c)", *(sig - 1));
+    case 'd':  /* double argument */
+      lua_pushnumber(L, va_arg(vl, double));
+      break;
+    case 'i':  /* int argument */
+      lua_pushnumber(L, va_arg(vl, int));
+      break;
+    case 's':  /* string argument */
+      lua_pushstring(L, va_arg(vl, char *));
+      break;
+    case 'b':
+      lua_pushboolean(L,va_arg(vl,int));
+      break;
+    case 'p':
+      lua_pushlightuserdata(L,va_arg(vl,void*));
+      break;
+    case 'f':
+      lua_pushcfunction(L, (lua_CFunction)va_arg(vl,void*));
+      break;
+    case '>':
+      goto endwhile;
+    default:
+      luaL_error(L, "invalid option (%c)", *(sig - 1));
     }
     narg++;
     luaL_checkstack(L, 1, "too many arguments");
@@ -186,38 +186,38 @@ int clue_call_va (clue_State *L, const char *func, const char *sig, ...) {
   status = lua_pcall(L, narg, nres, 0);
   if (status != 0)  /* do the call */
     luaL_error(L, "error running function `%s': %s",
-    func, lua_tostring(L, -1));
+               func, lua_tostring(L, -1));
   /* retrieve results */
   nres = -nres;     /* stack index of first result */
   while (*sig) {    /* get results */
     switch (*sig++) {
     case 'd':  /* double result */
-       if (!lua_isnumber(L, nres))
-         luaL_error(L, "wrong result type");
-       *va_arg(vl, double *) = lua_tonumber(L, nres);
-       break;
-     case 'i':  /* int result */
-       if (!lua_isnumber(L, nres))
-         luaL_error(L, "wrong result type");
-       *va_arg(vl, int *) = (int)lua_tonumber(L, nres);
-       break;
-         case 'b':  /* boolean result */
-           if (!lua_isboolean(L,nres))
-             luaL_error(L, "wrong result type");
-           *va_arg(vl, int *) = (int)lua_toboolean(L, nres);
-           break;
-         case 'p':
-           if (!lua_islightuserdata(L,nres))
-             luaL_error(L, "wrong result type");
-           *va_arg(vl, void **) = (void*)lua_topointer(L, nres);
-           break;
-     case 's':  /* string result */
-       if (!lua_isstring(L, nres))
-         luaL_error(L, "wrong result type");
-       *va_arg(vl, const char **) = lua_tostring(L, nres);
-       break;
-     default:
-       luaL_error(L, "invalid option (%c)", *(sig - 1));
+      if (!lua_isnumber(L, nres))
+        luaL_error(L, "wrong result type");
+      *va_arg(vl, double *) = lua_tonumber(L, nres);
+      break;
+    case 'i':  /* int result */
+      if (!lua_isnumber(L, nres))
+        luaL_error(L, "wrong result type");
+      *va_arg(vl, int *) = (int)lua_tonumber(L, nres);
+      break;
+    case 'b':  /* boolean result */
+      if (!lua_isboolean(L,nres))
+        luaL_error(L, "wrong result type");
+      *va_arg(vl, int *) = (int)lua_toboolean(L, nres);
+      break;
+    case 'p':
+      if (!lua_islightuserdata(L,nres))
+        luaL_error(L, "wrong result type");
+      *va_arg(vl, void **) = (void*)lua_topointer(L, nres);
+      break;
+    case 's':  /* string result */
+      if (!lua_isstring(L, nres))
+        luaL_error(L, "wrong result type");
+      *va_arg(vl, const char **) = lua_tostring(L, nres);
+      break;
+    default:
+      luaL_error(L, "invalid option (%c)", *(sig - 1));
     }
     nres++;
   }

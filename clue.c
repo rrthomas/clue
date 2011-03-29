@@ -34,6 +34,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "clue.h"
 
@@ -154,23 +155,23 @@ int clue_call_va (clue_State *L, const char *func, const char *sig, ...) {
   narg = 0;
   while (*sig) {    /* push arguments */
     switch (*sig++) {
-    case 'd':  /* double argument */
-      lua_pushnumber(L, va_arg(vl, double));
+    case 'n':
+      lua_pushnumber(L, va_arg(vl, lua_Number));
       break;
-    case 'i':  /* int argument */
-      lua_pushnumber(L, va_arg(vl, int));
+    case 'i':
+      lua_pushinteger(L, va_arg(vl, lua_Integer));
       break;
     case 'b':
-      lua_pushboolean(L,va_arg(vl,int));
+      lua_pushboolean(L, va_arg(vl, int));
       break;
-    case 'p':
-      lua_pushlightuserdata(L,va_arg(vl,void*));
+    case 's':
+      lua_pushstring(L, va_arg(vl, const char *));
       break;
-    case 's':  /* string argument */
-      lua_pushstring(L, va_arg(vl, char *));
+    case 'u':
+      lua_pushlightuserdata(L, va_arg(vl, void *));
       break;
     case 'f':
-      lua_pushcfunction(L, (lua_CFunction)va_arg(vl,void*));
+      lua_pushcfunction(L, va_arg(vl, lua_CFunction));
       break;
     case '>':
       goto endwhile;
@@ -182,7 +183,7 @@ int clue_call_va (clue_State *L, const char *func, const char *sig, ...) {
   } endwhile:
 
   /* do the call */
-  nres = strlen(sig);  /* number of expected results */
+  nres = (int)strlen(sig);  /* number of expected results */
   status = lua_pcall(L, narg, nres, 0);
   if (status != 0)  /* do the call */
     luaL_error(L, "error running function `%s': %s",
@@ -191,30 +192,30 @@ int clue_call_va (clue_State *L, const char *func, const char *sig, ...) {
   nres = -nres;     /* stack index of first result */
   while (*sig) {    /* get results */
     switch (*sig++) {
-    case 'd':  /* double result */
+    case 'n':
       if (!lua_isnumber(L, nres))
         luaL_error(L, "wrong result type");
-      *va_arg(vl, double *) = lua_tonumber(L, nres);
+      *va_arg(vl, lua_Number *) = lua_tonumber(L, nres);
       break;
-    case 'i':  /* int result */
+    case 'i':
       if (!lua_isnumber(L, nres))
         luaL_error(L, "wrong result type");
-      *va_arg(vl, int *) = (int)lua_tonumber(L, nres);
+      *va_arg(vl, lua_Integer *) = lua_tointeger(L, nres);
       break;
-    case 'b':  /* boolean result */
+    case 'b':
       if (!lua_isboolean(L,nres))
         luaL_error(L, "wrong result type");
       *va_arg(vl, int *) = (int)lua_toboolean(L, nres);
       break;
-    case 'p':
-      if (!lua_islightuserdata(L,nres))
-        luaL_error(L, "wrong result type");
-      *va_arg(vl, void **) = (void*)lua_topointer(L, nres);
-      break;
-    case 's':  /* string result */
+    case 's':
       if (!lua_isstring(L, nres))
         luaL_error(L, "wrong result type");
       *va_arg(vl, const char **) = lua_tostring(L, nres);
+      break;
+    case 'u':
+      if (!lua_islightuserdata(L,nres))
+        luaL_error(L, "wrong result type");
+      *va_arg(vl, void **) = (void*)lua_topointer(L, nres);
       break;
     default:
       luaL_error(L, "invalid option (%c)", *(sig - 1));

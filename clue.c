@@ -167,6 +167,15 @@ int clue_call (clue_State *L, const char *func, const char *sig, ...) {
     case 's':
       lua_pushstring(L, va_arg(vl, const char *));
       break;
+    case 'S':
+      {
+        const char *bs = va_arg(vl, char *);
+        lua_pushlstring(L,bs,va_arg(vl, size_t));
+      }
+    case 'z':
+      va_arg(vl, void *);
+      lua_pushnil(L);
+      break;
     case 'u':
       lua_pushlightuserdata(L, va_arg(vl, void *));
       break;
@@ -194,28 +203,35 @@ int clue_call (clue_State *L, const char *func, const char *sig, ...) {
     switch (*sig++) {
     case 'n':
       if (!lua_isnumber(L, nres))
-        luaL_error(L, "wrong result type");
+        luaL_error(L, "wrong result type: number expected");
       *va_arg(vl, lua_Number *) = lua_tonumber(L, nres);
       break;
     case 'i':
       if (!lua_isnumber(L, nres))
-        luaL_error(L, "wrong result type");
+        luaL_error(L, "wrong result type: number expected");
       *va_arg(vl, lua_Integer *) = lua_tointeger(L, nres);
       break;
-    case 'b':
-      if (!lua_isboolean(L,nres))
-        luaL_error(L, "wrong result type");
+    case 'b': /* Accept nil as false boolean */
+      if (!lua_isboolean(L, nres) && !lua_isnil(L, nres))
+        luaL_error(L, "wrong result type: boolean expected");
       *va_arg(vl, int *) = (int)lua_toboolean(L, nres);
       break;
     case 's':
       if (!lua_isstring(L, nres))
-        luaL_error(L, "wrong result type");
+        luaL_error(L, "wrong result type: string expected");
       *va_arg(vl, const char **) = lua_tostring(L, nres);
       break;
-    case 'u':
-      if (!lua_islightuserdata(L,nres))
-        luaL_error(L, "wrong result type");
-      *va_arg(vl, void **) = (void*)lua_topointer(L, nres);
+    case 'S':
+      {
+        size_t size = 0;
+        *va_arg(vl, const char **) = luaL_checklstring(L, nres, &size);
+        *va_arg(vl, int *) = size;
+        break;
+      }
+    case 'u': /* Accept nil as NULL pointer */
+      if (!lua_islightuserdata(L,nres) && !lua_isnil(L, nres))
+        luaL_error(L, "wrong result type: pointer expected");
+      *va_arg(vl, void **) = (void *)lua_topointer(L, nres);
       break;
     default:
       luaL_error(L, "invalid option (%c)", *(sig - 1));

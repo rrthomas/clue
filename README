@@ -59,11 +59,14 @@ result types. Valid types are:
   i = lua_Integer
   b = boolean (int)
   s = const char *
+  S = counted string (const char *, size_t)
+  z = nil (only argument, not return value)
   u = lightuserdata (void *)
   f = lua_CFunction (only argument, not return value)
 
 The variadic arguments are the argument values followed by pointers in
-which to store the results.
+which to store the results. Nil is accepted as a boolean or userdata
+result, and converted to false or NULL respectively.
 
 
 To get and set Lua variables, two macros are used:
